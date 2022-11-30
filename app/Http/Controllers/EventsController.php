@@ -186,11 +186,21 @@ class EventsController extends BaseController
     ```
      */
 
+    /**
+     * @return mixed
+     * @throws \Exception
+     */
     public function getFutureEventsWithWorkshops() {
         $now = Carbon::now()->toDateTimeString();
-        $futureEvents = Event::with('workshops')->whereHas('latestWorkshop',function ($query) use ($now){
-            $query->whereDate('start','>',$now);
-        })->toSql();
-        throw new \Exception('implement in coding task 2');
+        $firstWorkshopsForEveryEvent = Workshop::selectRaw('event_id, MIN(id) as id')
+            ->groupBy('event_id')
+            ->pluck('event_id')->toArray();
+
+        $futureEvents = Event::with('workshops')
+            ->whereHas('latestWorkshop' , function($query) use ($now,$firstWorkshopsForEveryEvent){
+                $query->whereDate('workshops.start','>',$now)->whereIn('workshops.event_id',$firstWorkshopsForEveryEvent);
+            })->get();
+
+        return json_encode($futureEvents);
     }
 }
