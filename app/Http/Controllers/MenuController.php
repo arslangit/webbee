@@ -92,7 +92,37 @@ class MenuController extends BaseController
     ]
      */
 
+    /**
+     * Get nested menu items tree
+     * @return false|string
+     */
     public function getMenuItems() {
-        throw new \Exception('implement in coding task 3');
+        $elements = MenuItem::get()->toArray();
+        $tree = $this->buildTree($elements,null);
+
+        return json_encode($tree);
+    }
+
+    /**
+     * Build recursive tree
+     * @param array $elements
+     * @param $parentId
+     * @return array
+     */
+    function buildTree(array $elements, $parentId = null)
+    {
+        $branch = array();
+
+        foreach ($elements as $element) {
+            if ($element['parent_id'] == $parentId) {
+                $children = $this->buildTree($elements, $element['id']);
+                if ($children) {
+                    $element['children'] = $children;
+                }
+                $branch[] = (object)$element;
+            }
+        }
+
+        return $branch;
     }
 }
